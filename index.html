@@ -1,0 +1,148 @@
+<html>
+<head>
+
+</head>
+<body>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<link rel="stylesheet" href="/style.css" crossorigin="anonymous">
+<section class="jumbotron text-center">
+	<div class="container">
+		<h1 class="jumbotron-heading">Bitbucket Commits</h1>
+	</div>
+</section>
+<div class="container">
+	<div id="response" class="row">
+		<!--<input class="form-control" name="team" type="text" id="team" placeholder="Team Name...."/>-->
+		<label for="project">Name</label>
+		<select id="project" name="project" class="form-control">
+			<option value="sheba_new_api">API</option>
+			<option value="sheba_new_admin">Admin</option>
+			<option value="sheba_new_partner">Partner</option>
+			<option value="sheba_website">Web</option>
+		</select>
+		<br>
+		<br>
+		<label for="project">User Name</label>
+		<input class="form-control" name="username" type="text" id="username" placeholder="User Name...." value="sakib_rahman_chy"/>
+		<br>
+		<br>
+		<label for="project">Branch Name</label>
+		<input class="form-control" name="branch" type="text" id="branch" placeholder="Branch Name...." value="development"/>
+		<br>
+		<br>
+		<label for="project">Start Date....</label>
+		<input class="form-control" name="start_date" type="date" id="start_date" placeholder="Start Date...."/>
+		<br>
+		<br>
+		<label for="project">End Date....</label>
+		<input class="form-control" name="end_date" type="date" id="end_date" placeholder="End Date...."/>
+		<br>
+		<br>
+		<button onclick="getAndValidateInputFields()">Get all Commits</button>
+	</div>
+	<div class="row" style="margin-top: 20px"><div class="card  contacts_card">
+		<div class="card-header">
+			<div class="input-group">
+				<button onclick="goToNextPage()">Previous Histories</button>
+
+			</div>
+		</div>
+		<div class="card-body contacts_body">
+			<ul class="timeline-list commits">
+
+			</ul>
+		</div>
+		<div class="card-footer">
+			<button onclick="goToNextPage()">Previous Histories</button>
+		</div>
+	</div>
+</div>
+	<script
+			src="https://code.jquery.com/jquery-3.3.1.js"
+			integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+			crossorigin="anonymous"></script>
+	<script
+			src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+	<script type="text/javascript">
+        var access_token = null;
+        var page_number = 1;
+        $(document).ready(function() {
+
+            var queries = generateQueries();
+            console.log(document.location);
+            if(queries.access_token) {
+                console.log('Successfully Logged in');
+                access_token = queries.access_token;
+                access_token = decodeURIComponent(access_token);
+                console.log(access_token);
+            } else {
+                var url = "https://bitbucket.org/site/oauth2/authorize?client_id=B5mXxuazC77LVrR3LR&response_type=token";
+                window.location.replace(url);
+            }
+        });
+
+        function generateQueries() {
+            var queries = {};
+            $.each(document.location.hash.substr(1).split('&'),function(c,q){
+                var i = q.split('=');
+                if(i[0] !== "")
+                    queries[i[0].toString()] = i[1].toString();
+            });
+            return queries;
+        }
+
+        function getAndValidateInputFields() {
+            var team = 'startern';
+            var project = $("#project").val();
+            var branch = $("#branch").val();
+            var username = $("#username").val();
+            var start_date = $("#start_date").val();
+            var end_date = $("#end_date").val();
+            getCommits(team,project,branch,username,null,null,1);
+        }
+
+        function getCommits(team, project, branch, username, start_date, end_date, page_number) {
+            var commits = "";
+            let commitFetchUrl = "https://bitbucket.org/!api/2.0/repositories/"+team+"/"+project+"/commits/"+branch+"?access_token="+access_token+"&pagelen=100&page="+page_number;
+            $.ajax({
+                url: commitFetchUrl,
+                // beforeSend: function (xhr) {
+                //     xhr.setRequestHeader ("Authorization", "Bearer "+access_token+"");
+                // },
+                success: function(result){
+                    if(result.values) {
+                        let filtered_results = result.values.filter((commit, index) => {
+                            if (commit.author.user.username === username) {
+                                let date = new Date(commit.date);
+                                commits += `<li class="primary ">
+								<div class="timeline_content">
+									<div class="user_info">
+										<span>`+commit.message+`</span>
+										<p style="font-size: 14px">`+date.getDate()+`-`+( date.getMonth() + 1) +`-`+date.getFullYear()+` `+date.getHours()+`:`+date.getMinutes()+`</p>
+									</div>
+								</div>
+							</li>`;
+							}
+                        });
+                        $('.commits').html(commits);
+                    }
+                },
+                error: function(err) {
+                    console.log(err);
+                }
+            });
+        }
+
+        function goToNextPage() {
+            var team = 'startern';
+            var project = $("#project").val();
+            var branch = $("#branch").val();
+            var username = $("#username").val();
+            var start_date = $("#start_date").val();
+            var end_date = $("#end_date").val();
+			getCommits(team,project,branch,username,start_date,end_date, page_number + 1);
+            page_number++;
+        }
+	</script>
+</body>
+</html>
